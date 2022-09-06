@@ -10155,7 +10155,6 @@ def main(argv):
                         help='Path of output directory for resulting files.')
     parser.add_argument('-f', '--format', metavar='FORMAT', required=False,
                         help='Output format. Possible values: csv, html. Default: html')
-                        help='Path of output directory for table HTML files.')
     parser.add_argument('bdatdir',
                         help='Path of Xenoblade 3 "bdat" directory.')
     parser.add_argument('language',
