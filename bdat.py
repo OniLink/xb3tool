@@ -7443,7 +7443,7 @@ class BdatTable(object):
 </html>
 """
 
-    def print(self, language=None):
+    def printHtml(self, language=None):
         """Return a string containing this table in HTML format.
 
         Parameters:
@@ -7523,6 +7523,51 @@ class BdatTable(object):
             s += '    </tr>\n'
         s += self._HTML_FOOTER
         return s
+
+    def printCsv(self):
+      """Return a string containing this table in CSV format."""
+      csv_str = ""
+
+      csv_str += 'ID'
+      for i in range(1, len(self._fields)):
+        csv_str += ','
+        csv_str += self._fields[i].name
+      csv_str += '\n'
+
+      for i in range(len(self._rows)):
+        row = self._rows[i]
+        csv_str += str(row[0])
+
+        for j in range(1,len(self._fields)):
+          csv_str += ','
+
+          values = None
+          if self._fields[j].array_size is None:
+            values = (row[j],)
+          else:
+            values = row[j]
+
+          value_str = ''
+          for value in values:
+            if isinstance(value, tuple) and len(value) >= 4:
+              if value[3] is not None:
+                node = f':{value[3]}'
+              else:
+                node = ''
+              value_str = f'{value[2]}{node}'
+              # value_str = str(value[1])
+            else:
+              if isinstance(value, tuple):
+                value = value[1]
+              value_str = str(value)
+          value_str = value_str.replace('\n', ' ')
+          value_str = value_str.replace('"', "'")
+          if ',' in value_str:
+            value_str = f'"{value_str}"'
+          csv_str += value_str
+        csv_str += '\n'
+
+      return csv_str
 
     @staticmethod
     def _refkey(x):
@@ -9860,6 +9905,8 @@ def main(argv):
                         help='Language code for text files, one of: cn fr gb ge it jp kr sp tw (default: gb)')
     parser.add_argument('-o', '--outdir', metavar='OUTPUT-DIR', required=True,
                         help='Path of output directory for table HTML files.')
+    parser.add_argument('-f', '--format', metavar='FORMAT', required=False,
+                        help='Output format. Possible values: csv, html. Default: html')
     parser.add_argument('bdatdir', metavar='BDAT-DIR', nargs='+',
                         help=('Path of Xenoblade 3 "bdat" directory.\n'
                               'If multiple directories are given, tables in later directories (DLC data, for example) will override same-named tables in earlier directories.'))
@@ -9917,8 +9964,14 @@ def main(argv):
     if not os.path.exists(args.outdir):
         os.mkdir(args.outdir)
     for name, table in tables.items():
-        fname = re.sub('[^ -.0-~]', '_', name) + '.html'
-        s = table.print(langcodes.get(args.language))
+        fname = re.sub('[^ -.0-~]', '_', name)
+        s = ""
+        if args.format != None and args.format.lower() == 'csv':
+          fname += '.csv'
+          s = table.printCsv()
+        else:
+          fname += '.html'
+          s = table.printHtml(langcodes.get(args.language))
         with open(os.path.join(args.outdir, fname), 'wb') as f:
             f.write(s.encode('utf-8'))
 # end def
